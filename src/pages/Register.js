@@ -1,5 +1,7 @@
+// force rebuild 2025-12-11
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { API_BASE } from "../api.js";   // ✅ ใช้ API_BASE แทน hard-coded URL
 
 function Register() {
   const navigate = useNavigate();
@@ -25,7 +27,8 @@ function Register() {
     try {
       setLoading(true);
 
-      const res = await fetch("https://what-will-you-cook-backend.onrender.com/api/auth/register", {
+      // ✅ เปลี่ยนมาใช้ API_BASE ตรงนี้
+      const res = await fetch(`${API_BASE}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),
@@ -39,11 +42,12 @@ function Register() {
       }
 
       setSuccess("Account created! You can now log in.");
-      // รอแป๊บแล้วพาไปหน้า login
+
       setTimeout(() => {
         navigate("/login");
       }, 800);
     } catch (err) {
+      console.error(err);
       setError("Error connecting to server. Please try again later.");
     } finally {
       setLoading(false);
@@ -53,7 +57,6 @@ function Register() {
   return (
     <div className="min-h-[calc(100vh-64px)] flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md">
-        {/* Card */}
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8">
           <h1 className="text-2xl font-semibold text-center mb-2">
             Create your cooking account
@@ -127,7 +130,6 @@ function Register() {
           </form>
         </div>
 
-        {/* under card */}
         <p className="text-center text-xs text-gray-500 mt-4">
           Already have an account?{" "}
           <Link
