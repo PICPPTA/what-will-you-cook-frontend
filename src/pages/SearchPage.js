@@ -1,7 +1,7 @@
 // src/pages/SearchPage.js
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { API_BASE } from "../api";   // ✅ ใช้ API จริงจาก Render
+import { API_BASE } from "../api.js";
 
 const MEAT = [
   "Chicken", "Pork", "Beef", "Duck", "Fish", "Shrimp", "Squid", "Dried Squid",

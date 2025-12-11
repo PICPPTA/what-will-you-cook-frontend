@@ -1,7 +1,7 @@
 // src/pages/MyRecipesPage.js
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { API_BASE } from "../api";   // ✅ นำเข้าตัวแปร API_BASE
+import { API_BASE } from "../api.js";
 
 function MyRecipesPage() {
   const [recipes, setRecipes] = useState([]);

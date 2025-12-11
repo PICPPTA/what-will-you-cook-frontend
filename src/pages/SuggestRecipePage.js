@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { API_BASE } from "../api";   // ✅ ใช้ URL backend จริง
+import { API_BASE } from "../api.js";
 
 export default function SuggestRecipePage() {
   const [text, setText] = useState("");

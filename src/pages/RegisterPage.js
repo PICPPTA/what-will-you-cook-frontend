@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { API_BASE } from "../api";   // ✅ ใช้ API URL ของ backend จริง
+import { API_BASE } from "../api.js";
 
 export default function SearchPage() {
   const [ingredientsText, setIngredientsText] = useState("");

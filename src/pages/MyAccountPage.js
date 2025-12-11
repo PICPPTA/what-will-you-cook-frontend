@@ -1,6 +1,6 @@
 // src/pages/AccountPage.js
 import React, { useEffect, useState } from "react";
-import { API_BASE } from "../api";  // ✅ ใช้ API จริงจาก Render
+import { API_BASE } from "../api.js";
 
 function AccountPage() {
   const [user, setUser] = useState(null);

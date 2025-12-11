@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { API_BASE } from "../api";   // ✅ ใช้ API จริงบน Render
+import { API_BASE } from "../api.js";
 import { useNavigate } from "react-router-dom";
 
 export default function LoginPage() {

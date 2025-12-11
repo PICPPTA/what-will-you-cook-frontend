@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
-import { API_BASE } from "../api";
+import { API_BASE } from "../api.js";
 
 function AddRecipePage() {
   const navigate = useNavigate();

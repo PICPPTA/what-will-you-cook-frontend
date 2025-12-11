@@ -1,7 +1,7 @@
 // src/pages/RecipeDetailPage.js
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { API_BASE } from "../api";   // ✅ เพิ่มเพื่อใช้ URL ของ backend จริง
+import { API_BASE } from "../api.js";
 
 function RecipeDetailPage() {
   const { id } = useParams();

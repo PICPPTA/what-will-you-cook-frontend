@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { API_BASE } from "../api";   // ✅ ใช้ URL จากไฟล์ api.js
+import { API_BASE } from "../api.js";
 
 export default function Search() {
   const [ingredientsText, setIngredientsText] = useState("");
