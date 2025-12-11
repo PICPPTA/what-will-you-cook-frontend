@@ -1,5 +1,4 @@
-// force rebuild 2025-12-11 v4
-
+// force rebuild v4
 // src/App.js
 import { useState, useEffect } from "react";
 import { Routes, Route, Link, useNavigate } from "react-router-dom";
