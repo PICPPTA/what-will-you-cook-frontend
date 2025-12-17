@@ -1,5 +1,5 @@
-// FORCE REBUILD 2025-12-17-V13
-const forceRebuild_20251217_v13 = true;
+// FORCE REBUILD 2025-12-17-V14
+import "./forceRebuild_20251217_v14.js";
 
 import { useState, useEffect } from "react";
 import { Routes, Route, Link, useNavigate } from "react-router-dom";
@@ -36,7 +36,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      
+
       {/* NAVBAR */}
       <nav className="bg-white border-b border-gray-200">
         <div className="w-full px-8 py-3 flex items-center justify-between">
