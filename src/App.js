@@ -1,5 +1,5 @@
-// FORCE REBUILD 2025-12-17-V14
-import "./forceRebuild_20251217_v14.js";
+// FORCE REBUILD 2025-12-17-V15
+import "./forceRebuild.js";
 
 import { useState, useEffect } from "react";
 import { Routes, Route, Link, useNavigate } from "react-router-dom";
@@ -36,7 +36,6 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-
       {/* NAVBAR */}
       <nav className="bg-white border-b border-gray-200">
         <div className="w-full px-8 py-3 flex items-center justify-between">
@@ -131,7 +130,7 @@ function App() {
         </Routes>
       </main>
 
-      {/* FOOTER ใหม่ตรงกลาง 2 บรรทัดตาม Figma */}
+      {/* FOOTER */}
       <footer className="border-t border-gray-200">
         <div className="max-w-6xl mx-auto px-4 py-6 text-xs text-gray-500 text-center">
           <p>© 2025 What Will You Cook — Cook smarter with what you have.</p>
@@ -152,7 +151,6 @@ function App() {
           </p>
         </div>
       </footer>
-
     </div>
   );
 }
