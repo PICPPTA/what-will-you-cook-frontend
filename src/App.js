@@ -1,5 +1,4 @@
-// FORCE REBUILD 2025-12-17-V99
-
+// FORCE REBUILD 2025-12-17-V150
 import "./forceRebuild.js";
 
 import { useState, useEffect } from "react";
@@ -37,6 +36,10 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+
+      {/* hidden marker to force rebuild */}
+      <div style={{ display: "none" }}>force-build-2025-12-17-v150</div>
+
       {/* NAVBAR */}
       <nav className="bg-white border-b border-gray-200">
         <div className="w-full px-8 py-3 flex items-center justify-between">
@@ -152,6 +155,7 @@ function App() {
           </p>
         </div>
       </footer>
+
     </div>
   );
 }
