@@ -30,8 +30,6 @@ const OTHERS = [
   "Noodles Sheet", "Bean Curd Sheet", "Bread Crumbs", "Seaweed"
 ];
 
-const ALL_TAGS = [...MEAT, ...VEGETABLES, ...OTHERS];
-
 export default function SearchPage() {
   const [selectedIngredients, setSelectedIngredients] = useState([]);
   const [searchText, setSearchText] = useState("");
@@ -42,7 +40,6 @@ export default function SearchPage() {
   const [savingId, setSavingId] = useState(null);
 
   const token = localStorage.getItem("token");
-  const isLoggedIn = !!token;
 
   const toggleIngredient = (name) => {
     setSelectedIngredients((prev) =>
@@ -50,90 +47,6 @@ export default function SearchPage() {
         ? prev.filter((x) => x !== name)
         : [...prev, name]
     );
-  };
-
-  const handleSearch = async () => {
-    if (selectedIngredients.length === 0) {
-      setMessage("Please select at least one ingredient tag.");
-      return;
-    }
-
-    setMessage("");
-    setSaveMessage("");
-    setResults([]);
-    setLoading(true);
-
-    try {
-      const lowerTags = selectedIngredients.map((t) => t.toLowerCase());
-
-      const res = await fetch(`${API_BASE}/recipes/search`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ingredients: lowerTags,
-          matchMode: "any",
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setMessage(data.message || "Search failed");
-        setLoading(false);
-        return;
-      }
-
-      setMessage(`Found ${data.matchedCount} recipe(s)`);
-      setResults(data.recipes || []);
-    } catch (error) {
-      setMessage("Error connecting to server");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleClear = () => {
-    setSelectedIngredients([]);
-    setSearchText("");
-    setResults([]);
-    setMessage("");
-    setSaveMessage("");
-  };
-
-  const handleSaveRecipe = async (recipeId) => {
-    setSaveMessage("");
-
-    if (!token) {
-      setSaveMessage("กรุณาเข้าสู่ระบบเพื่อบันทึกเมนู");
-      return;
-    }
-
-    try {
-      setSavingId(recipeId);
-
-      // ✅ ใช้ endpoint สำหรับบันทึกเมนูที่ถูกต้อง
-      const res = await fetch(`${API_BASE}/saved-recipes`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + token,
-        },
-        body: JSON.stringify({ recipeId }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setSaveMessage(data.message || "ไม่สามารถบันทึกเมนูได้");
-        return;
-      }
-
-      setSaveMessage(data.message || "บันทึกเมนูแล้ว");
-    } catch (err) {
-      setSaveMessage("เชื่อมต่อเซิร์ฟเวอร์ไม่ได้");
-    } finally {
-      setSavingId(null);
-    }
   };
 
   const renderChip = (name) => {
@@ -158,11 +71,56 @@ export default function SearchPage() {
   const suggestionTags =
     searchText.trim().length === 0
       ? []
-      : ALL_TAGS.filter(
+      : [...MEAT, ...VEGETABLES, ...OTHERS].filter(
           (tag) =>
             tag.toLowerCase().includes(searchText.trim().toLowerCase()) &&
             !selectedIngredients.includes(tag)
         );
+
+  const handleSearch = async () => {
+    if (selectedIngredients.length === 0) {
+      setMessage("Please select at least one ingredient tag.");
+      return;
+    }
+
+    setLoading(true);
+    setMessage("");
+    setResults([]);
+
+    try {
+      const lowerTags = selectedIngredients.map((t) => t.toLowerCase());
+
+      const res = await fetch(`${API_BASE}/recipes/search`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ingredients: lowerTags,
+          matchMode: "any",
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setMessage(data.message || "Search failed");
+      } else {
+        setMessage(`Found ${data.matchedCount} recipe(s)`);
+        setResults(data.recipes || []);
+      }
+    } catch (err) {
+      setMessage("Error connecting to server");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClear = () => {
+    setSelectedIngredients([]);
+    setSearchText("");
+    setResults([]);
+    setMessage("");
+    setSaveMessage("");
+  };
 
   return (
     <div className="max-w-6xl mx-auto px-4">
@@ -179,14 +137,16 @@ export default function SearchPage() {
           </h2>
 
           <div className="max-w-xl mx-auto">
+            {/* Search bar */}
             <input
               type="text"
               className="w-full border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-800"
-              placeholder='Type to search ingredient tags...'
+              placeholder="Type to search ingredient tags..."
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
             />
 
+            {/* Suggestions */}
             {suggestionTags.length > 0 && (
               <div className="mt-3 flex flex-wrap">
                 {suggestionTags.map((tag) => (
@@ -205,7 +165,20 @@ export default function SearchPage() {
               </div>
             )}
 
-            <div className="flex items-center gap-3 mt-4">
+            {/* Ingredient Categories */}
+            <div className="mt-6">
+              <h3 className="font-medium mb-2">Meat</h3>
+              <div className="flex flex-wrap">{MEAT.map(renderChip)}</div>
+
+              <h3 className="font-medium mt-4 mb-2">Vegetables</h3>
+              <div className="flex flex-wrap">{VEGETABLES.map(renderChip)}</div>
+
+              <h3 className="font-medium mt-4 mb-2">Others</h3>
+              <div className="flex flex-wrap">{OTHERS.map(renderChip)}</div>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex items-center gap-3 mt-6">
               <button
                 onClick={handleSearch}
                 className="px-4 py-2 rounded-full bg-black text-white text-sm"
