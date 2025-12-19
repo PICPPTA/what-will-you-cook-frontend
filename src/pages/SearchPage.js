@@ -122,9 +122,44 @@ export default function SearchPage() {
     setSaveMessage("");
   };
 
+  // ⭐⭐⭐ NEW: save recipe function
+  const handleSaveRecipe = async (recipeId) => {
+    if (!token) {
+      setSaveMessage("Please log in first.");
+      return;
+    }
+
+    try {
+      setSavingId(recipeId);
+      setSaveMessage("");
+
+      const res = await fetch(`${API_BASE}/saved-recipes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ recipeId }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setSaveMessage(data.message || "Failed to save recipe");
+        return;
+      }
+
+      setSaveMessage("Saved successfully!");
+    } catch (err) {
+      setSaveMessage("Error saving recipe");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto px-4">
-      {/* Hero */}
+      {/* Hero Section */}
       <section className="py-8">
         <h1 className="text-3xl font-semibold mb-1">What Will You Cook?</h1>
         <p className="text-sm text-gray-600 mb-8">
@@ -221,10 +256,11 @@ export default function SearchPage() {
 
               {token && (
                 <button
+                  onClick={() => handleSaveRecipe(item._id)}
                   className="self-start px-3 py-1 text-xs rounded-full border hover:bg-gray-50"
                   disabled={savingId === item._id}
                 >
-                  Save Recipe
+                  {savingId === item._id ? "Saving..." : "Save Recipe"}
                 </button>
               )}
             </div>
