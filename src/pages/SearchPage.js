@@ -221,11 +221,10 @@ export default function SearchPage() {
 
               {token && (
                 <button
-                  onClick={() => handleSaveRecipe(item._id)}
                   className="self-start px-3 py-1 text-xs rounded-full border hover:bg-gray-50"
                   disabled={savingId === item._id}
                 >
-                  {savingId === item._id ? "Saving..." : "Save Recipe"}
+                  Save Recipe
                 </button>
               )}
             </div>
@@ -234,3 +233,4 @@ export default function SearchPage() {
       </section>
     </div>
   );
+}
