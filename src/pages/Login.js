@@ -23,11 +23,15 @@ function Login({ updateToken }) {
     try {
       setLoading(true);
 
-      const res = await fetch("https://what-will-you-cook-backend.onrender.com/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      const res = await fetch(
+        "https://what-will-you-cook-backend.onrender.com/api/auth/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include", // ✅ สำคัญ: ให้ browser ส่ง/รับ cookie ข้ามโดเมนได้
+          body: JSON.stringify({ email, password }),
+        }
+      );
 
       const data = await res.json();
 
@@ -36,10 +40,11 @@ function Login({ updateToken }) {
         return;
       }
 
-      localStorage.setItem("token", data.token);
+      // ✅ cookie-based auth: ไม่ต้องเก็บ token ใน localStorage แล้ว
       if (typeof updateToken === "function") {
         updateToken();
       }
+
       navigate("/");
     } catch (err) {
       setError("Error connecting to server. Please try again later.");
