@@ -19,15 +19,26 @@ function AccountPage() {
         });
 
         if (!meRes.ok) {
-          // ยังไม่ login (401) หรืออื่น ๆ
+          // ยังไม่ login (401) หรืออื่น ๆ → ไปหน้า login
           setUser(null);
           setMyRecipes([]);
+          setLoading(false);
+          navigate("/login");
           return;
         }
 
         const meData = await meRes.json().catch(() => ({}));
-        // รองรับทั้ง { user: {...} } หรือ {...} เผื่อ backend ส่งรูปแบบต่างกัน
-        const meUser = meData.user ?? meData;
+        const meUser = meData?.user ?? meData;
+
+        // กันกรณี response แปลก ๆ
+        if (!meUser || typeof meUser !== "object") {
+          setUser(null);
+          setMyRecipes([]);
+          setLoading(false);
+          navigate("/login");
+          return;
+        }
+
         setUser(meUser);
 
         // 2) โหลดเมนูของฉัน
@@ -35,6 +46,14 @@ function AccountPage() {
           method: "GET",
           credentials: "include",
         });
+
+        if (myRes.status === 401) {
+          setUser(null);
+          setMyRecipes([]);
+          setLoading(false);
+          navigate("/login");
+          return;
+        }
 
         if (myRes.ok) {
           const recipes = await myRes.json().catch(() => []);
@@ -46,12 +65,14 @@ function AccountPage() {
         console.error("Load account error:", err);
         setUser(null);
         setMyRecipes([]);
+        navigate("/login");
       } finally {
         setLoading(false);
       }
     };
 
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSaveRecipe = async (recipeId) => {
@@ -141,7 +162,7 @@ function AccountPage() {
               <h3 className="text-sm font-semibold">My Shared Recipes</h3>
 
               <button
-                onClick={() => navigate("/add-recipe")}
+                onClick={() => (user ? navigate("/add-recipe") : navigate("/login"))}
                 className="hidden md:inline-flex px-3 py-1.5 text-xs rounded-full bg-gray-900 text-white hover:bg-black disabled:opacity-60"
                 disabled={!user}
                 title={!user ? "Please log in first" : ""}
