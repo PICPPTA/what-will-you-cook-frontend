@@ -1,6 +1,7 @@
 // src/pages/Login.js
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { API_BASE } from "../api.js";
 
 function Login({ updateToken }) {
   const navigate = useNavigate();
@@ -15,7 +16,10 @@ function Login({ updateToken }) {
     e.preventDefault();
     setError("");
 
-    if (!email || !password) {
+    const emailTrim = String(email).trim();
+    const passwordTrim = String(password).trim();
+
+    if (!emailTrim || !passwordTrim) {
       setError("Please enter your email and password.");
       return;
     }
@@ -23,27 +27,22 @@ function Login({ updateToken }) {
     try {
       setLoading(true);
 
-      const res = await fetch(
-        "https://what-will-you-cook-backend.onrender.com/api/auth/login",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include", // ✅ สำคัญ: ให้ browser ส่ง/รับ cookie ข้ามโดเมนได้
-          body: JSON.stringify({ email, password }),
-        }
-      );
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include", // ✅ สำคัญ: ให้ browser ส่ง/รับ httpOnly cookie ข้ามโดเมน
+        body: JSON.stringify({ email: emailTrim, password: passwordTrim }),
+      });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
         setError(data.message || "Login failed. Please try again.");
         return;
       }
 
-      // ✅ cookie-based auth: ไม่ต้องเก็บ token ใน localStorage แล้ว
-      if (typeof updateToken === "function") {
-        updateToken();
-      }
+      // ✅ cookie-based auth: ไม่เก็บ token ใน localStorage
+      if (typeof updateToken === "function") updateToken();
 
       navigate("/");
     } catch (err) {

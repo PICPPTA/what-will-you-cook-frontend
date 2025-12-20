@@ -1,7 +1,6 @@
 // src/pages/AccountPage.js
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-
 import { API_BASE } from "../api.js";
 
 function AccountPage() {
@@ -10,59 +9,64 @@ function AccountPage() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const token = localStorage.getItem("token");
-
   useEffect(() => {
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-
-    const headers = {
-      Authorization: `Bearer ${token}`,
-    };
-
     const load = async () => {
       try {
-        // ข้อมูลผู้ใช้
-        const meRes = await fetch(`${API_BASE}/auth/me`, { headers });
-        if (meRes.ok) {
-          const meData = await meRes.json();
-          setUser(meData);
+        // 1) ตรวจสถานะ login จาก cookie
+        const meRes = await fetch(`${API_BASE}/auth/me`, {
+          method: "GET",
+          credentials: "include",
+        });
+
+        if (!meRes.ok) {
+          // ยังไม่ login (401) หรืออื่น ๆ
+          setUser(null);
+          setMyRecipes([]);
+          return;
         }
 
-        // เมนูที่ user คนนี้สร้างเอง
-        const myRes = await fetch(`${API_BASE}/recipes/my`, { headers });
+        const meData = await meRes.json().catch(() => ({}));
+        // รองรับทั้ง { user: {...} } หรือ {...} เผื่อ backend ส่งรูปแบบต่างกัน
+        const meUser = meData.user ?? meData;
+        setUser(meUser);
+
+        // 2) โหลดเมนูของฉัน
+        const myRes = await fetch(`${API_BASE}/recipes/my`, {
+          method: "GET",
+          credentials: "include",
+        });
+
         if (myRes.ok) {
-          const recipes = await myRes.json();
-          setMyRecipes(recipes);
+          const recipes = await myRes.json().catch(() => []);
+          setMyRecipes(Array.isArray(recipes) ? recipes : []);
+        } else {
+          setMyRecipes([]);
         }
       } catch (err) {
         console.error("Load account error:", err);
+        setUser(null);
+        setMyRecipes([]);
       } finally {
         setLoading(false);
       }
     };
 
     load();
-  }, [token]);
+  }, []);
 
-  // กด Save Recipe จากหน้า Account (ไปเก็บใน saved-recipes)
   const handleSaveRecipe = async (recipeId) => {
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
     try {
-      await fetch(`${API_BASE}/saved-recipes`, {
+      const res = await fetch(`${API_BASE}/saved-recipes`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + token,
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ recipeId }),
       });
+
+      if (res.status === 401) {
+        navigate("/login");
+        return;
+      }
     } catch (err) {
       console.error("Save from account error:", err);
     }
@@ -80,7 +84,6 @@ function AccountPage() {
   return (
     <div className="max-w-6xl mx-auto px-4">
       <section className="py-8 space-y-8">
-        {/* หัวเรื่องสั้น ๆ ด้านบนเหมือน Figma */}
         <div>
           <h1 className="text-3xl font-semibold mb-1">What Will You Cook?</h1>
           <p className="text-sm text-gray-600">
@@ -89,15 +92,23 @@ function AccountPage() {
           </p>
         </div>
 
-        {/* การ์ดโปรไฟล์ + My Shared Recipes */}
         <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-          {/* header profile */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="h-16 w-16 rounded-full bg-gray-200 overflow-hidden" />
               <div>
                 <h2 className="text-xl font-semibold">{displayName}</h2>
                 <p className="text-xs text-gray-500">{displayEmail}</p>
+
+                {!loading && !user && (
+                  <button
+                    type="button"
+                    onClick={() => navigate("/login")}
+                    className="mt-2 text-xs rounded-full bg-gray-900 text-white px-3 py-1.5 hover:bg-black"
+                  >
+                    Log in
+                  </button>
+                )}
               </div>
             </div>
 
@@ -117,7 +128,6 @@ function AccountPage() {
             </div>
           </div>
 
-          {/* About ใต้โปรไฟล์ (ข้อความสั้นของ user) */}
           <div className="mt-6">
             <h3 className="text-sm font-semibold mb-1">About</h3>
             <p className="text-sm text-gray-600">
@@ -126,15 +136,15 @@ function AccountPage() {
             </p>
           </div>
 
-          {/* My Shared Recipes */}
           <div className="mt-8">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold">My Shared Recipes</h3>
 
-              {/* ปุ่ม Add Recipe มุมขวา */}
               <button
                 onClick={() => navigate("/add-recipe")}
-                className="hidden md:inline-flex px-3 py-1.5 text-xs rounded-full bg-gray-900 text-white hover:bg-black"
+                className="hidden md:inline-flex px-3 py-1.5 text-xs rounded-full bg-gray-900 text-white hover:bg-black disabled:opacity-60"
+                disabled={!user}
+                title={!user ? "Please log in first" : ""}
               >
                 + Add Recipe
               </button>
@@ -142,6 +152,10 @@ function AccountPage() {
 
             {loading ? (
               <p className="text-sm text-gray-500">Loading your recipes...</p>
+            ) : !user ? (
+              <p className="text-sm text-gray-500">
+                Please log in to view your shared recipes.
+              </p>
             ) : myRecipes.length === 0 ? (
               <p className="text-sm text-gray-500">
                 You haven&apos;t shared any recipes yet.&nbsp;
@@ -157,16 +171,13 @@ function AccountPage() {
               <div className="grid gap-4 md:grid-cols-2">
                 {myRecipes.map((recipe) => {
                   const description =
-                    recipe.description ||
-                    recipe.steps ||
-                    "No description yet.";
+                    recipe.description || recipe.steps || "No description yet.";
 
                   return (
                     <article
                       key={recipe._id}
                       className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm flex flex-col"
                     >
-                      {/* รูปเมนูด้านบนการ์ด */}
                       <div className="h-40 bg-gray-200 overflow-hidden">
                         {recipe.imageUrl ? (
                           <img
@@ -180,9 +191,7 @@ function AccountPage() {
                       </div>
 
                       <div className="p-4 space-y-2 flex-1 flex flex-col">
-                        <h4 className="font-semibold text-sm">
-                          {recipe.name}
-                        </h4>
+                        <h4 className="font-semibold text-sm">{recipe.name}</h4>
                         <p className="text-xs text-gray-600">
                           {typeof description === "string"
                             ? description.slice(0, 160)
