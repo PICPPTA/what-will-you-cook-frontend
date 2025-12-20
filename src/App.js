@@ -1,3 +1,4 @@
+// src/App.js
 // FORCE REBUILD 2025-12-16-V4-FIX
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -90,10 +91,7 @@ function App() {
       {/* NAVBAR */}
       <nav className="bg-white border-b border-gray-200">
         <div className="w-full px-8 py-3 flex items-center justify-between">
-          <Link
-            to="/"
-            className="font-semibold text-xl tracking-tight text-gray-900"
-          >
+          <Link to="/" className="font-semibold text-xl tracking-tight text-gray-900">
             What Will You Cook?
           </Link>
 
@@ -103,17 +101,11 @@ function App() {
             </Link>
 
             {isAuthed ? (
-              <Link
-                to="/my-recipes"
-                className="hover:text-gray-900 text-gray-700"
-              >
+              <Link to="/my-recipes" className="hover:text-gray-900 text-gray-700">
                 My Recipes
               </Link>
             ) : (
-              <span
-                className="text-gray-400 cursor-not-allowed"
-                title="Log in to view your recipes"
-              >
+              <span className="text-gray-400 cursor-not-allowed" title="Log in to view your recipes">
                 My Recipes
               </span>
             )}
@@ -184,7 +176,11 @@ function App() {
           <Route path="/login" element={<Login updateToken={updateToken} />} />
           <Route path="/register" element={<Register />} />
 
-          <Route path="/add-recipe" element={<AddRecipePage />} />
+          {/* ✅ FIX: ส่ง me + meLoading ให้ AddRecipePage */}
+          <Route
+            path="/add-recipe"
+            element={<AddRecipePage me={me} meLoading={meLoading} />}
+          />
         </Routes>
       </main>
 
@@ -193,17 +189,11 @@ function App() {
         <div className="max-w-6xl mx-auto px-4 py-6 text-xs text-gray-500 text-center">
           <p>© 2025 What Will You Cook — Cook smarter with what you have.</p>
           <p className="mt-1">
-            <button
-              type="button"
-              className="hover:text-gray-700 underline underline-offset-2"
-            >
+            <button type="button" className="hover:text-gray-700 underline underline-offset-2">
               Privacy Policy
             </button>
             <span className="mx-1 text-gray-400">|</span>
-            <button
-              type="button"
-              className="hover:text-gray-700 underline underline-offset-2"
-            >
+            <button type="button" className="hover:text-gray-700 underline underline-offset-2">
               Terms of Service
             </button>
           </p>

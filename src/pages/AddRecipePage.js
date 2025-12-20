@@ -1,12 +1,11 @@
 // src/pages/AddRecipePage.js
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-
 import { API_BASE } from "../api.js";
 
-function AddRecipePage() {
+function AddRecipePage({ me, meLoading }) {
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
+  const isAuthed = !!me;
 
   const [name, setName] = useState("");
   const [ingredientsText, setIngredientsText] = useState("");
@@ -18,8 +17,27 @@ function AddRecipePage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // ถ้าไม่ได้ login ให้ขึ้นการ์ดให้ไปล็อกอินก่อน
-  if (!token) {
+  // ระหว่างเช็ค session
+  if (meLoading) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-10">
+        <h1 className="text-3xl font-semibold mb-1">What Will You Cook?</h1>
+        <p className="text-sm text-gray-600 mb-6">
+          Add your own recipes and share them with the community.
+        </p>
+
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+          <h2 className="text-lg font-semibold mb-2">Checking session...</h2>
+          <p className="text-sm text-gray-600">
+            Please wait a moment.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ไม่ได้ล็อกอินจริง → ให้ไปล็อกอินก่อน
+  if (!isAuthed) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-10">
         <h1 className="text-3xl font-semibold mb-1">What Will You Cook?</h1>
@@ -30,8 +48,7 @@ function AddRecipePage() {
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
           <h2 className="text-lg font-semibold mb-2">Sign in to add recipes</h2>
           <p className="text-sm text-gray-600 mb-4">
-            You need to be logged in before you can create and share a new
-            recipe.
+            You need to be logged in before you can create and share a new recipe.
           </p>
           <div className="flex gap-3">
             <Link
@@ -67,20 +84,25 @@ function AddRecipePage() {
 
       const res = await fetch(`${API_BASE}/recipes`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + token,
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "include", // ✅ สำคัญ: ส่ง cookie ไปด้วย
+        cache: "no-store",
         body: JSON.stringify({
           name: name.trim(),
-          ingredients: ingredientsText, // backend จะแปลง string -> array ให้เอง
+          ingredients: ingredientsText, // backend แปลงเป็น array ได้
           steps: steps.trim(),
           cookingTime: cookingTime ? Number(cookingTime) : undefined,
           imageUrl: imageUrl.trim() || undefined,
         }),
       });
 
-      const data = await res.json();
+      // ถ้า session หลุด/หมดอายุ
+      if (res.status === 401) {
+        navigate("/login", { replace: true });
+        return;
+      }
+
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
         setError(data.message || "Could not create recipe.");
@@ -88,6 +110,7 @@ function AddRecipePage() {
       }
 
       setSuccess("Recipe created successfully!");
+
       // เคลียร์ฟอร์ม
       setName("");
       setIngredientsText("");
@@ -95,11 +118,10 @@ function AddRecipePage() {
       setCookingTime("");
       setImageUrl("");
 
-      // ไปหน้า Account หรือ Recipe detail ก็ได้
-      // ตอนนี้ให้ไป /account เพื่อเห็นใน My Shared Recipes
+      // ไปหน้า account เพื่อเห็นใน My Shared Recipes
       setTimeout(() => {
-        navigate("/account");
-      }, 800);
+        navigate("/account", { replace: true });
+      }, 400);
     } catch (err) {
       console.error("Create recipe error:", err);
       setError("Error connecting to server.");
@@ -110,7 +132,6 @@ function AddRecipePage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
-      {/* หัวแบบเดียวกับหน้าอื่น ๆ */}
       <header className="mb-6">
         <h1 className="text-3xl font-semibold mb-1">Add Recipe</h1>
         <p className="text-sm text-gray-600">
@@ -119,12 +140,10 @@ function AddRecipePage() {
         </p>
       </header>
 
-      {/* การ์ดฟอร์ม */}
       <form
         onSubmit={handleSubmit}
         className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 md:p-8 space-y-5"
       >
-        {/* error / success */}
         {error && (
           <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
             {error}
@@ -136,7 +155,6 @@ function AddRecipePage() {
           </p>
         )}
 
-        {/* Recipe name */}
         <div>
           <label className="block text-sm font-medium text-gray-800 mb-1">
             Recipe name
@@ -150,7 +168,6 @@ function AddRecipePage() {
           />
         </div>
 
-        {/* Image URL */}
         <div>
           <label className="block text-sm font-medium text-gray-800 mb-1">
             Image URL (optional)
@@ -168,7 +185,6 @@ function AddRecipePage() {
           </p>
         </div>
 
-        {/* Ingredients */}
         <div>
           <label className="block text-sm font-medium text-gray-800 mb-1">
             Ingredients
@@ -181,12 +197,10 @@ function AddRecipePage() {
             onChange={(e) => setIngredientsText(e.target.value)}
           />
           <p className="mt-1 text-xs text-gray-500">
-            The app will split these by comma and match them with other users&apos;
-            searches.
+            The app will split these by comma and match them with other users&apos; searches.
           </p>
         </div>
 
-        {/* Steps / Method */}
         <div>
           <label className="block text-sm font-medium text-gray-800 mb-1">
             Steps / Method
@@ -200,7 +214,6 @@ function AddRecipePage() {
           />
         </div>
 
-        {/* Cooking time */}
         <div className="max-w-xs">
           <label className="block text-sm font-medium text-gray-800 mb-1">
             Cooking time (minutes)
@@ -215,7 +228,6 @@ function AddRecipePage() {
           />
         </div>
 
-        {/* Submit */}
         <div className="pt-2">
           <button
             type="submit"
