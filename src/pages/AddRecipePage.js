@@ -1,4 +1,6 @@
 // src/pages/AddRecipePage.js
+// FORCE REBUILD 2025-12-21-V1
+
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { API_BASE } from "../api.js";
@@ -28,9 +30,7 @@ function AddRecipePage({ me, meLoading }) {
 
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
           <h2 className="text-lg font-semibold mb-2">Checking session...</h2>
-          <p className="text-sm text-gray-600">
-            Please wait a moment.
-          </p>
+          <p className="text-sm text-gray-600">Please wait a moment.</p>
         </div>
       </div>
     );
@@ -74,10 +74,18 @@ function AddRecipePage({ me, meLoading }) {
     setError("");
     setSuccess("");
 
-    if (!name.trim() || !ingredientsText.trim()) {
+    const nameTrim = name.trim();
+    const ingTrim = ingredientsText.trim();
+
+    if (!nameTrim || !ingTrim) {
       setError("Please fill in the recipe name and ingredients.");
       return;
     }
+
+    const ingredientsArray = ingTrim
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
 
     try {
       setLoading(true);
@@ -85,18 +93,18 @@ function AddRecipePage({ me, meLoading }) {
       const res = await fetch(`${API_BASE}/recipes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include", // ✅ สำคัญ: ส่ง cookie ไปด้วย
+        credentials: "include",
         cache: "no-store",
         body: JSON.stringify({
-          name: name.trim(),
-          ingredients: ingredientsText, // backend แปลงเป็น array ได้
-          steps: steps.trim(),
+          name: nameTrim,
+          ingredients: ingredientsArray,     // ✅ ส่ง array ชัวร์
+          ingredientsText: ingTrim,          // ✅ เผื่อ backend ใช้ text
+          steps: steps.trim() || "",
           cookingTime: cookingTime ? Number(cookingTime) : undefined,
           imageUrl: imageUrl.trim() || undefined,
         }),
       });
 
-      // ถ้า session หลุด/หมดอายุ
       if (res.status === 401) {
         navigate("/login", { replace: true });
         return;
@@ -111,16 +119,14 @@ function AddRecipePage({ me, meLoading }) {
 
       setSuccess("Recipe created successfully!");
 
-      // เคลียร์ฟอร์ม
       setName("");
       setIngredientsText("");
       setSteps("");
       setCookingTime("");
       setImageUrl("");
 
-      // ไปหน้า account เพื่อเห็นใน My Shared Recipes
       setTimeout(() => {
-        navigate("/account", { replace: true });
+        navigate("/my-recipes", { replace: true });
       }, 400);
     } catch (err) {
       console.error("Create recipe error:", err);
@@ -135,8 +141,7 @@ function AddRecipePage({ me, meLoading }) {
       <header className="mb-6">
         <h1 className="text-3xl font-semibold mb-1">Add Recipe</h1>
         <p className="text-sm text-gray-600">
-          Share a dish you love. Other cooks will be able to view, save, rate,
-          and comment on your recipe.
+          Share a dish you love. Other cooks will be able to view, save, rate, and comment on your recipe.
         </p>
       </header>
 
@@ -180,8 +185,7 @@ function AddRecipePage({ me, meLoading }) {
             onChange={(e) => setImageUrl(e.target.value)}
           />
           <p className="mt-1 text-xs text-gray-500">
-            For now, paste a link to a JPG/PNG image. In the future this can be
-            changed to file upload.
+            For now, paste a link to a JPG/PNG image. In the future this can be changed to file upload.
           </p>
         </div>
 

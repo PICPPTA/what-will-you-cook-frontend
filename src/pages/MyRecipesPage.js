@@ -1,178 +1,141 @@
-// src/pages/MyRecipesPage.js
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { API_BASE } from "../api.js";
 
-function MyRecipesPage() {
+function MyRecipesPage({ me, meLoading }) {
   const [recipes, setRecipes] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const token = localStorage.getItem("token");
-
   useEffect(() => {
-    const fetchSaved = async () => {
-      if (!token) {
-        setLoading(false);
+    let cancelled = false;
+
+    const run = async () => {
+      setError("");
+
+      // ยังเช็ค session อยู่ -> อย่าเพิ่งทำอะไร
+      if (meLoading) return;
+
+      // ไม่ได้ login -> ไม่ต้อง fetch
+      if (!me) {
         setRecipes([]);
         return;
       }
 
       try {
         setLoading(true);
-        setError("");
-
-        const res = await fetch(`${API_BASE}/saved-recipes`, {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
+        const res = await fetch(`${API_BASE}/recipes/my`, {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
         });
 
-        const data = await res.json();
+        const data = await res.json().catch(() => null);
 
         if (!res.ok) {
-          setError(data.message || "Failed to load saved recipes.");
-        } else {
-          // รองรับหลายรูปแบบข้อมูล
-          const list = Array.isArray(data)
-            ? data
-            : data.recipes || data.savedRecipes || [];
-          setRecipes(list);
+          throw new Error(data?.message || "Failed to load recipes");
         }
-      } catch (err) {
-        setError("Error connecting to server.");
+
+        if (!cancelled) setRecipes(Array.isArray(data) ? data : []);
+      } catch (e) {
+        if (!cancelled) setError(e.message || "Server error");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
-    fetchSaved();
-  }, [token]);
-
-  // ถ้าไม่ได้ Login
-  if (!token) {
-    return (
-      <div className="max-w-6xl mx-auto px-4 py-10">
-        <h1 className="text-3xl font-semibold mb-1">What Will You Cook?</h1>
-        <p className="text-sm text-gray-600 mb-6">
-          All your saved recipes in one place.
-        </p>
-
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 md:p-8">
-          <h2 className="text-lg font-semibold mb-2">My Recipes</h2>
-          <p className="text-sm text-gray-500 mb-4">
-            Please log in to see and manage your saved recipes.
-          </p>
-          <Link
-            to="/login"
-            className="inline-flex items-center px-4 py-2 rounded-full text-sm bg-gray-900 text-white hover:bg-black"
-          >
-            Log in
-          </Link>
-        </div>
-      </div>
-    );
-  }
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [me, meLoading]);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-10">
+    <div className="max-w-6xl mx-auto px-4">
       <h1 className="text-3xl font-semibold mb-1">What Will You Cook?</h1>
       <p className="text-sm text-gray-600 mb-6">
-        All your saved recipes in one place — quick, smart, and simple.
+        All your shared recipes in one place.
       </p>
 
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 md:p-8">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+        <div className="flex items-center justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold">My Recipes</h2>
-            <p className="text-xs text-gray-500">
-              Recipes you&apos;ve saved to cook again later.
+            <p className="text-sm text-gray-600">
+              Manage recipes you have shared.
             </p>
           </div>
 
-          {recipes.length > 0 && (
-            <p className="text-xs text-gray-500">
-              Total{" "}
-              <span className="font-medium text-gray-900">
-                {recipes.length}
-              </span>{" "}
-              recipe{recipes.length > 1 ? "s" : ""}
-            </p>
+          {me && (
+            <Link
+              to="/add-recipe"
+              className="inline-flex items-center px-4 py-2 rounded-full text-sm bg-gray-900 text-white hover:bg-black"
+            >
+              + Add Recipe
+            </Link>
           )}
         </div>
 
-        {loading && (
-          <p className="text-sm text-gray-600">Loading your recipes...</p>
-        )}
+        <div className="mt-5">
+          {meLoading && (
+            <p className="text-sm text-gray-500">Checking session...</p>
+          )}
 
-        {error && !loading && (
-          <p className="text-sm text-red-600 mb-3">{error}</p>
-        )}
+          {!meLoading && !me && (
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+              <p className="text-sm text-gray-700 mb-3">
+                Please log in to see and manage your recipes.
+              </p>
+              <Link
+                to="/login"
+                className="inline-flex items-center px-4 py-2 rounded-full text-sm bg-gray-900 text-white hover:bg-black"
+              >
+                Log in
+              </Link>
+            </div>
+          )}
 
-        {!loading && !error && recipes.length === 0 && (
-          <p className="text-sm text-gray-500">
-            You don&apos;t have any saved recipes yet. Go back to Home and save
-            some dishes you like!
-          </p>
-        )}
+          {me && loading && (
+            <p className="text-sm text-gray-500">Loading recipes...</p>
+          )}
 
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          {recipes.map((item) => (
-            <Link
-              key={item._id}
-              to={`/recipes/${item._id}`}
-              className="group border border-gray-200 rounded-2xl overflow-hidden bg-gray-50 hover:bg-gray-100 transition-shadow hover:shadow-md"
-            >
-              <div className="h-32 bg-gray-200 overflow-hidden">
-                {item.imageUrl ? (
-                  <img
-                    src={item.imageUrl}
-                    alt={item.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-200" />
-                )}
-              </div>
+          {me && error && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+              {error}
+            </p>
+          )}
 
-              <div className="p-4">
-                <h3 className="text-sm font-semibold text-gray-900 mb-1 line-clamp-1">
-                  {item.name}
-                </h3>
+          {me && !loading && !error && recipes.length === 0 && (
+            <p className="text-sm text-gray-600">
+              You haven&apos;t shared any recipes yet.
+              <Link to="/add-recipe" className="ml-1 underline">
+                Add your first recipe
+              </Link>
+            </p>
+          )}
 
-                {item.steps && (
-                  <p className="text-xs text-gray-600 mb-3 line-clamp-2">
-                    {item.steps}
-                  </p>
-                )}
-
-                {item.ingredients && (
-                  <div className="flex flex-wrap gap-1 mb-3">
-                    {item.ingredients.slice(0, 4).map((ing) => (
-                      <span
-                        key={ing}
-                        className="px-2 py-0.5 rounded-full bg-white border text-[11px] text-gray-700"
-                      >
-                        {ing}
-                      </span>
-                    ))}
-                    {item.ingredients.length > 4 && (
-                      <span className="text-[11px] text-gray-400">
-                        +{item.ingredients.length - 4} more
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                <button
-                  type="button"
-                  className="mt-1 inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-gray-900 text-white group-hover:bg-black"
+          {me && recipes.length > 0 && (
+            <ul className="mt-3 grid gap-3">
+              {recipes.map((r) => (
+                <li
+                  key={r._id}
+                  className="border border-gray-200 rounded-xl p-4 hover:bg-gray-50"
                 >
-                  View recipe →
-                </button>
-              </div>
-            </Link>
-          ))}
+                  <Link to={`/recipes/${r._id}`} className="font-medium">
+                    {r.name}
+                  </Link>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {Array.isArray(r.ingredients)
+                      ? r.ingredients.slice(0, 8).join(", ")
+                      : ""}
+                    {Array.isArray(r.ingredients) && r.ingredients.length > 8
+                      ? " …"
+                      : ""}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </div>

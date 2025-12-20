@@ -1,5 +1,5 @@
 // src/App.js
-// FORCE REBUILD 2025-12-16-V4-FIX
+// FORCE REBUILD 2025-12-21-V1
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Routes, Route, Link, useNavigate } from "react-router-dom";
@@ -23,8 +23,9 @@ function App() {
   const [meLoading, setMeLoading] = useState(true);
 
   // กัน setState หลัง unmount
-  const mountedRef = useRef(true);
+  const mountedRef = useRef(false);
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
       mountedRef.current = false;
     };
@@ -65,9 +66,7 @@ function App() {
   }, [refreshMe]);
 
   // ส่งให้ Login เรียกหลัง login สำเร็จ
-  const updateToken = async () => {
-    return refreshMe();
-  };
+  const updateToken = async () => refreshMe();
 
   const handleLogout = async () => {
     try {
@@ -125,16 +124,10 @@ function App() {
 
             {!isAuthed && !meLoading && (
               <>
-                <Link
-                  to="/login"
-                  className="px-4 py-1.5 text-sm border rounded-full hover:bg-gray-50"
-                >
+                <Link to="/login" className="px-4 py-1.5 text-sm border rounded-full hover:bg-gray-50">
                   Log In
                 </Link>
-                <Link
-                  to="/register"
-                  className="px-4 py-1.5 text-sm rounded-full bg-black text-white hover:bg-gray-800"
-                >
+                <Link to="/register" className="px-4 py-1.5 text-sm rounded-full bg-black text-white hover:bg-gray-800">
                   Sign Up
                 </Link>
               </>
@@ -166,7 +159,12 @@ function App() {
           <Route path="/" element={<SearchPage />} />
           <Route path="/search" element={<SearchPage />} />
 
-          <Route path="/my-recipes" element={<MyRecipesPage />} />
+          {/* ✅ FIX: ส่ง me + meLoading ให้ MyRecipesPage */}
+          <Route
+            path="/my-recipes"
+            element={<MyRecipesPage me={me} meLoading={meLoading} />}
+          />
+
           <Route path="/recipes/:id" element={<RecipeDetailPage />} />
 
           <Route path="/about" element={<AboutPage />} />
