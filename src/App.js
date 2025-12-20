@@ -1,6 +1,6 @@
-// FORCE REBUILD 2025-12-16-V3
+// FORCE REBUILD 2025-12-16-V4-FIX
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Routes, Route, Link, useNavigate } from "react-router-dom";
 
 import Login from "./pages/Login";
@@ -18,59 +18,68 @@ import { API_BASE } from "./api.js";
 function App() {
   const navigate = useNavigate();
 
-  // ✅ cookie-based auth: เก็บ user profile แทน token
   const [me, setMe] = useState(null);
   const [meLoading, setMeLoading] = useState(true);
 
-  // ✅ เรียก /auth/me เพื่อเช็คสถานะ login จาก cookie
-  const refreshMe = useCallback(async () => {
-    try {
-      setMeLoading(true);
+  // กัน setState หลัง unmount
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
+  // กันเรียก /auth/me ซ้อนกัน
+  const refreshingRef = useRef(false);
+
+  const refreshMe = useCallback(async () => {
+    if (refreshingRef.current) return;
+    refreshingRef.current = true;
+
+    if (mountedRef.current) setMeLoading(true);
+    try {
       const res = await fetch(`${API_BASE}/auth/me`, {
         method: "GET",
         credentials: "include",
-        cache: "no-store", // ✅ กัน browser cache ทำให้ดูเหมือนยังไม่ login
+        cache: "no-store",
       });
 
       if (!res.ok) {
-        setMe(null);
+        if (mountedRef.current) setMe(null);
         return;
       }
 
       const data = await res.json().catch(() => ({}));
-      setMe(data.user ?? data);
+      if (mountedRef.current) setMe(data.user ?? data);
     } catch (err) {
-      setMe(null);
+      if (mountedRef.current) setMe(null);
     } finally {
-      // ✅ กัน meLoading ค้างเสมอ
-      setMeLoading(false);
+      if (mountedRef.current) setMeLoading(false);
+      refreshingRef.current = false;
     }
   }, []);
 
-  // โหลดครั้งแรก
   useEffect(() => {
     refreshMe();
   }, [refreshMe]);
 
-  // ✅ ส่งให้ Login เรียกหลัง login สำเร็จ (แทน updateToken แบบเดิม)
+  // ส่งให้ Login เรียกหลัง login สำเร็จ
   const updateToken = async () => {
-    await refreshMe();
+    return refreshMe();
   };
 
   const handleLogout = async () => {
     try {
-      // ลบ cookie ฝั่ง backend
       await fetch(`${API_BASE}/auth/logout`, {
         method: "POST",
         credentials: "include",
         cache: "no-store",
       });
     } catch (e) {
-      // แม้ยิงไม่ติด ก็ล้าง state ฝั่งหน้าเว็บไว้ก่อน
+      // ignore
     } finally {
       setMe(null);
-      navigate("/login");
+      navigate("/login", { replace: true });
     }
   };
 
@@ -112,12 +121,15 @@ function App() {
             <Link to="/about" className="hover:text-gray-900 text-gray-700">
               About
             </Link>
-
             <Link to="/contact" className="hover:text-gray-900 text-gray-700">
               Contact
             </Link>
 
             <span className="h-5 w-px bg-gray-200" />
+
+            {!isAuthed && meLoading && (
+              <span className="text-gray-400 text-sm">Checking session...</span>
+            )}
 
             {!isAuthed && !meLoading && (
               <>
@@ -136,10 +148,6 @@ function App() {
               </>
             )}
 
-            {!isAuthed && meLoading && (
-              <span className="text-gray-400 text-sm">Checking session...</span>
-            )}
-
             {isAuthed && (
               <>
                 <button
@@ -148,7 +156,6 @@ function App() {
                 >
                   My Account
                 </button>
-
                 <button
                   onClick={handleLogout}
                   className="px-3 py-1.5 text-xs border rounded-full hover:bg-gray-50"

@@ -30,7 +30,8 @@ function Login({ updateToken }) {
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include", // ✅ สำคัญ: ให้ browser ส่ง/รับ httpOnly cookie ข้ามโดเมน
+        credentials: "include",
+        cache: "no-store", // ✅ กัน cache
         body: JSON.stringify({ email: emailTrim, password: passwordTrim }),
       });
 
@@ -41,10 +42,13 @@ function Login({ updateToken }) {
         return;
       }
 
-      // ✅ cookie-based auth: ไม่เก็บ token ใน localStorage
-      if (typeof updateToken === "function") updateToken();
+      // ✅ สำคัญ: ต้อง await เพื่อให้ refreshMe() ใน App อัปเดต state ทัน
+      if (typeof updateToken === "function") {
+        await updateToken();
+      }
 
-      navigate("/");
+      // ✅ ไปหน้าโปรไฟล์เลย เพื่อดูผลชัดเจน
+      navigate("/account", { replace: true });
     } catch (err) {
       setError("Error connecting to server. Please try again later.");
     } finally {

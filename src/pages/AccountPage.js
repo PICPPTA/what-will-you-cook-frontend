@@ -10,16 +10,20 @@ function AccountPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    let alive = true;
+
     const load = async () => {
+      setLoading(true);
       try {
         // 1) ตรวจสถานะ login จาก cookie
         const meRes = await fetch(`${API_BASE}/auth/me`, {
           method: "GET",
           credentials: "include",
-          cache: "no-store", // ✅ กัน cache
+          cache: "no-store",
         });
 
         if (!meRes.ok) {
+          if (!alive) return;
           setUser(null);
           setMyRecipes([]);
           return;
@@ -27,14 +31,18 @@ function AccountPage() {
 
         const meData = await meRes.json().catch(() => ({}));
         const meUser = meData.user ?? meData;
+
+        if (!alive) return;
         setUser(meUser);
 
         // 2) โหลดเมนูของฉัน
         const myRes = await fetch(`${API_BASE}/recipes/my`, {
           method: "GET",
           credentials: "include",
-          cache: "no-store", // ✅ กัน cache
+          cache: "no-store",
         });
+
+        if (!alive) return;
 
         if (myRes.ok) {
           const recipes = await myRes.json().catch(() => []);
@@ -44,16 +52,21 @@ function AccountPage() {
         }
       } catch (err) {
         console.error("Load account error:", err);
+        if (!alive) return;
         setUser(null);
         setMyRecipes([]);
       } finally {
-        // ✅ กัน loading ค้างเสมอ
+        if (!alive) return;
         setLoading(false);
       }
     };
 
     load();
-  }, []);
+
+    return () => {
+      alive = false;
+    };
+  }, [navigate]);
 
   const handleSaveRecipe = async (recipeId) => {
     try {
@@ -66,7 +79,7 @@ function AccountPage() {
       });
 
       if (res.status === 401) {
-        navigate("/login");
+        navigate("/login", { replace: true });
         return;
       }
     } catch (err) {
