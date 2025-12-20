@@ -31,7 +31,7 @@ function Login({ updateToken }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        cache: "no-store", // ✅ กัน cache
+        cache: "no-store",
         body: JSON.stringify({ email: emailTrim, password: passwordTrim }),
       });
 
@@ -42,12 +42,12 @@ function Login({ updateToken }) {
         return;
       }
 
-      // ✅ สำคัญ: ต้อง await เพื่อให้ refreshMe() ใน App อัปเดต state ทัน
+      // ✅ สำคัญ: รอให้ App ยิง /auth/me แล้ว setMe เสร็จก่อน
       if (typeof updateToken === "function") {
         await updateToken();
       }
 
-      // ✅ ไปหน้าโปรไฟล์เลย เพื่อดูผลชัดเจน
+      // ไปหน้าโปรไฟล์เลยเพื่อเห็นผลชัด
       navigate("/account", { replace: true });
     } catch (err) {
       setError("Error connecting to server. Please try again later.");
@@ -64,8 +64,7 @@ function Login({ updateToken }) {
             Log in to your kitchen
           </h1>
           <p className="text-sm text-gray-500 text-center mb-6">
-            Welcome back! Enter your details to continue saving and exploring
-            recipes.
+            Welcome back! Enter your details to continue saving and exploring recipes.
           </p>
 
           {error && (
@@ -115,10 +114,7 @@ function Login({ updateToken }) {
 
         <p className="text-center text-xs text-gray-500 mt-4">
           Don&apos;t have an account?{" "}
-          <Link
-            to="/register"
-            className="text-gray-900 font-medium hover:underline"
-          >
+          <Link to="/register" className="text-gray-900 font-medium hover:underline">
             Sign up
           </Link>
         </p>
