@@ -35,6 +35,7 @@ function Login({ updateToken }) {
         body: JSON.stringify({ email: emailTrim, password: passwordTrim }),
       });
 
+      // กันกรณี backend ไม่ส่ง JSON หรือส่งผิดรูปแบบ
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
@@ -44,10 +45,15 @@ function Login({ updateToken }) {
 
       // ✅ สำคัญ: รอให้ App ยิง /auth/me แล้ว setMe เสร็จก่อน
       if (typeof updateToken === "function") {
-        await updateToken();
+        try {
+          await updateToken();
+        } catch (e) {
+          // ถึง updateToken จะพลาด เราก็ยังพาไป /account ได้
+          // (AccountPage จะเช็ค /auth/me อีกทีอยู่แล้ว)
+        }
       }
 
-      // ไปหน้าโปรไฟล์เลยเพื่อเห็นผลชัด
+      // ✅ ไปหน้าโปรไฟล์เลยเพื่อเห็นผลชัด
       navigate("/account", { replace: true });
     } catch (err) {
       setError("Error connecting to server. Please try again later.");
@@ -85,6 +91,7 @@ function Login({ updateToken }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
+                disabled={loading}
               />
             </div>
 
@@ -99,6 +106,7 @@ function Login({ updateToken }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
+                disabled={loading}
               />
             </div>
 
@@ -114,7 +122,10 @@ function Login({ updateToken }) {
 
         <p className="text-center text-xs text-gray-500 mt-4">
           Don&apos;t have an account?{" "}
-          <Link to="/register" className="text-gray-900 font-medium hover:underline">
+          <Link
+            to="/register"
+            className="text-gray-900 font-medium hover:underline"
+          >
             Sign up
           </Link>
         </p>
