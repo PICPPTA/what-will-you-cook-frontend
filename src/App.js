@@ -1,6 +1,6 @@
 // FORCE REBUILD 2025-12-16-V3
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Routes, Route, Link, useNavigate } from "react-router-dom";
 
 import Login from "./pages/Login";
@@ -13,29 +13,71 @@ import MyRecipesPage from "./pages/MyRecipesPage";
 import AccountPage from "./pages/AccountPage";
 import RecipeDetailPage from "./pages/RecipeDetailPage";
 
+import { API_BASE } from "./api.js";
+
 function App() {
-  const [token, setToken] = useState(localStorage.getItem("token"));
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    setToken(storedToken);
+  // ✅ cookie-based auth: เก็บ user profile แทน token
+  const [me, setMe] = useState(null);
+  const [meLoading, setMeLoading] = useState(true);
+
+  // ✅ เรียก /auth/me เพื่อเช็คสถานะ login จาก cookie
+  const refreshMe = useCallback(async () => {
+    try {
+      setMeLoading(true);
+
+      const res = await fetch(`${API_BASE}/auth/me`, {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store", // ✅ กัน browser cache ทำให้ดูเหมือนยังไม่ login
+      });
+
+      if (!res.ok) {
+        setMe(null);
+        return;
+      }
+
+      const data = await res.json().catch(() => ({}));
+      setMe(data.user ?? data);
+    } catch (err) {
+      setMe(null);
+    } finally {
+      // ✅ กัน meLoading ค้างเสมอ
+      setMeLoading(false);
+    }
   }, []);
 
-  const updateToken = () => {
-    const storedToken = localStorage.getItem("token");
-    setToken(storedToken);
+  // โหลดครั้งแรก
+  useEffect(() => {
+    refreshMe();
+  }, [refreshMe]);
+
+  // ✅ ส่งให้ Login เรียกหลัง login สำเร็จ (แทน updateToken แบบเดิม)
+  const updateToken = async () => {
+    await refreshMe();
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    setToken(null);
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      // ลบ cookie ฝั่ง backend
+      await fetch(`${API_BASE}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+        cache: "no-store",
+      });
+    } catch (e) {
+      // แม้ยิงไม่ติด ก็ล้าง state ฝั่งหน้าเว็บไว้ก่อน
+    } finally {
+      setMe(null);
+      navigate("/login");
+    }
   };
+
+  const isAuthed = !!me;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-
       {/* NAVBAR */}
       <nav className="bg-white border-b border-gray-200">
         <div className="w-full px-8 py-3 flex items-center justify-between">
@@ -51,8 +93,11 @@ function App() {
               Home
             </Link>
 
-            {token ? (
-              <Link to="/my-recipes" className="hover:text-gray-900 text-gray-700">
+            {isAuthed ? (
+              <Link
+                to="/my-recipes"
+                className="hover:text-gray-900 text-gray-700"
+              >
                 My Recipes
               </Link>
             ) : (
@@ -74,7 +119,7 @@ function App() {
 
             <span className="h-5 w-px bg-gray-200" />
 
-            {!token && (
+            {!isAuthed && !meLoading && (
               <>
                 <Link
                   to="/login"
@@ -91,7 +136,11 @@ function App() {
               </>
             )}
 
-            {token && (
+            {!isAuthed && meLoading && (
+              <span className="text-gray-400 text-sm">Checking session...</span>
+            )}
+
+            {isAuthed && (
               <>
                 <button
                   onClick={() => navigate("/account")}
@@ -153,7 +202,6 @@ function App() {
           </p>
         </div>
       </footer>
-
     </div>
   );
 }
