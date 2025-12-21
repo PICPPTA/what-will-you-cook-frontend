@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+Disallow: /account
+Disallow: /my-recipes
+Disallow: /add-recipe
+Disallow: /login
+Disallow: /register
+
+Sitemap: https://what-will-you-cook-frontend.onrender.com/sitemap.xml
