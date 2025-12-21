@@ -1,7 +1,7 @@
 // src/pages/AddRecipePage.js
-// FORCE REBUILD 2025-12-21-V1
+// FORCE REBUILD 2025-12-21-V2-UNIFY
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { API_BASE } from "../api.js";
 
@@ -19,50 +19,37 @@ function AddRecipePage({ me, meLoading }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // ระหว่างเช็ค session
   if (meLoading) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-10">
-        <h1 className="text-3xl font-semibold mb-1">What Will You Cook?</h1>
-        <p className="text-sm text-gray-600 mb-6">
-          Add your own recipes and share them with the community.
+        <h1 style={{ fontSize: 28, fontWeight: 900, margin: 0 }}>Add Recipe</h1>
+        <p className="muted" style={{ marginTop: 10 }}>
+          Checking session...
         </p>
-
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold mb-2">Checking session...</h2>
-          <p className="text-sm text-gray-600">Please wait a moment.</p>
+        <div className="app-card p-6 mt-5">
+          <p className="muted" style={{ margin: 0 }}>Please wait a moment.</p>
         </div>
       </div>
     );
   }
 
-  // ไม่ได้ล็อกอินจริง → ให้ไปล็อกอินก่อน
   if (!isAuthed) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-10">
-        <h1 className="text-3xl font-semibold mb-1">What Will You Cook?</h1>
-        <p className="text-sm text-gray-600 mb-6">
-          Add your own recipes and share them with the community.
+        <h1 style={{ fontSize: 28, fontWeight: 900, margin: 0 }}>Add Recipe</h1>
+        <p className="muted" style={{ marginTop: 10 }}>
+          Sign in to create and share a new recipe.
         </p>
 
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold mb-2">Sign in to add recipes</h2>
-          <p className="text-sm text-gray-600 mb-4">
+        <div className="app-card p-6 mt-5">
+          <h2 style={{ fontSize: 16, fontWeight: 900, margin: 0 }}>Sign in to add recipes</h2>
+          <p className="muted" style={{ marginTop: 10 }}>
             You need to be logged in before you can create and share a new recipe.
           </p>
-          <div className="flex gap-3">
-            <Link
-              to="/login"
-              className="inline-flex items-center px-4 py-2 rounded-full text-sm bg-gray-900 text-white hover:bg-black"
-            >
-              Log In
-            </Link>
-            <Link
-              to="/register"
-              className="inline-flex items-center px-4 py-2 rounded-full text-sm border border-gray-300 text-gray-800 hover:bg-gray-50"
-            >
-              Sign Up
-            </Link>
+
+          <div className="flex gap-3 mt-4">
+            <Link to="/login" className="btn btn-primary">Log In</Link>
+            <Link to="/register" className="btn">Sign Up</Link>
           </div>
         </div>
       </div>
@@ -97,8 +84,8 @@ function AddRecipePage({ me, meLoading }) {
         cache: "no-store",
         body: JSON.stringify({
           name: nameTrim,
-          ingredients: ingredientsArray,     // ✅ ส่ง array ชัวร์
-          ingredientsText: ingTrim,          // ✅ เผื่อ backend ใช้ text
+          ingredients: ingredientsArray,
+          ingredientsText: ingTrim,
           steps: steps.trim() || "",
           cookingTime: cookingTime ? Number(cookingTime) : undefined,
           imageUrl: imageUrl.trim() || undefined,
@@ -111,23 +98,19 @@ function AddRecipePage({ me, meLoading }) {
       }
 
       const data = await res.json().catch(() => ({}));
-
       if (!res.ok) {
         setError(data.message || "Could not create recipe.");
         return;
       }
 
       setSuccess("Recipe created successfully!");
-
       setName("");
       setIngredientsText("");
       setSteps("");
       setCookingTime("");
       setImageUrl("");
 
-      setTimeout(() => {
-        navigate("/my-recipes", { replace: true });
-      }, 400);
+      setTimeout(() => navigate("/my-recipes", { replace: true }), 400);
     } catch (err) {
       console.error("Create recipe error:", err);
       setError("Error connecting to server.");
@@ -139,34 +122,30 @@ function AddRecipePage({ me, meLoading }) {
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
       <header className="mb-6">
-        <h1 className="text-3xl font-semibold mb-1">Add Recipe</h1>
-        <p className="text-sm text-gray-600">
-          Share a dish you love. Other cooks will be able to view, save, rate, and comment on your recipe.
+        <h1 style={{ fontSize: 28, fontWeight: 900, margin: 0 }}>Add Recipe</h1>
+        <p className="muted" style={{ marginTop: 10 }}>
+          Share a dish you love. Other cooks can view, save, rate, and comment.
         </p>
       </header>
 
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 md:p-8 space-y-5"
-      >
+      <form onSubmit={handleSubmit} className="app-card p-6 md:p-8 space-y-5">
         {error && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-            {error}
-          </p>
+          <div className="app-card p-4" style={{ boxShadow: "none" }}>
+            <p style={{ margin: 0, fontSize: 13, color: "var(--danger)" }}>{error}</p>
+          </div>
         )}
+
         {success && (
-          <p className="text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg px-3 py-2">
-            {success}
-          </p>
+          <div className="app-card p-4" style={{ boxShadow: "none" }}>
+            <p style={{ margin: 0, fontSize: 13, color: "var(--success)" }}>{success}</p>
+          </div>
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-800 mb-1">
-            Recipe name
-          </label>
+          <label style={{ fontSize: 13, fontWeight: 900 }}>Recipe name</label>
           <input
             type="text"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
+            className="input mt-2"
             placeholder="e.g. Garlic Fried Rice"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -174,43 +153,39 @@ function AddRecipePage({ me, meLoading }) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-800 mb-1">
-            Image URL (optional)
-          </label>
+          <label style={{ fontSize: 13, fontWeight: 900 }}>Image URL (optional)</label>
           <input
             type="url"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
+            className="input mt-2"
             placeholder="https://example.com/my-dish.jpg"
             value={imageUrl}
             onChange={(e) => setImageUrl(e.target.value)}
           />
-          <p className="mt-1 text-xs text-gray-500">
-            For now, paste a link to a JPG/PNG image. In the future this can be changed to file upload.
+          <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
+            For now, paste a link to a JPG/PNG image. Later can be file upload.
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-800 mb-1">
-            Ingredients
-          </label>
+          <label style={{ fontSize: 13, fontWeight: 900 }}>Ingredients</label>
           <textarea
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
+            className="input mt-2"
+            style={{ minHeight: 96, borderRadius: 14, padding: 12 }}
             rows={3}
             placeholder="Separate ingredients with commas, e.g. egg, cheese, butter"
             value={ingredientsText}
             onChange={(e) => setIngredientsText(e.target.value)}
           />
-          <p className="mt-1 text-xs text-gray-500">
-            The app will split these by comma and match them with other users&apos; searches.
+          <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
+            The app will split these by comma for matching.
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-800 mb-1">
-            Steps / Method
-          </label>
+          <label style={{ fontSize: 13, fontWeight: 900 }}>Steps / Method</label>
           <textarea
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
+            className="input mt-2"
+            style={{ minHeight: 140, borderRadius: 14, padding: 12 }}
             rows={5}
             placeholder={"1. Prep ingredients\n2. Cook\n3. Serve and enjoy"}
             value={steps}
@@ -218,14 +193,12 @@ function AddRecipePage({ me, meLoading }) {
           />
         </div>
 
-        <div className="max-w-xs">
-          <label className="block text-sm font-medium text-gray-800 mb-1">
-            Cooking time (minutes)
-          </label>
+        <div style={{ maxWidth: 240 }}>
+          <label style={{ fontSize: 13, fontWeight: 900 }}>Cooking time (minutes)</label>
           <input
             type="number"
             min={1}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
+            className="input mt-2"
             placeholder="e.g. 20"
             value={cookingTime}
             onChange={(e) => setCookingTime(e.target.value)}
@@ -233,11 +206,7 @@ function AddRecipePage({ me, meLoading }) {
         </div>
 
         <div className="pt-2">
-          <button
-            type="submit"
-            disabled={loading}
-            className="inline-flex items-center justify-center px-6 py-2 rounded-full text-sm font-semibold bg-gray-900 text-white hover:bg-black disabled:opacity-60"
-          >
+          <button type="submit" disabled={loading} className="btn btn-primary">
             {loading ? "Saving..." : "Save recipe"}
           </button>
         </div>

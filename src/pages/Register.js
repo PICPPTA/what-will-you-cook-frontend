@@ -1,7 +1,9 @@
+// src/pages/Register.js
 // force rebuild 2025-12-11
+
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { API_BASE } from "../api.js";   // ✅ ใช้ API_BASE แทน hard-coded URL
+import { API_BASE } from "../api.js";
 
 function Register() {
   const navigate = useNavigate();
@@ -27,14 +29,13 @@ function Register() {
     try {
       setLoading(true);
 
-      // ✅ เปลี่ยนมาใช้ API_BASE ตรงนี้
       const res = await fetch(`${API_BASE}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
         setError(data.message || "Register failed. Please try again.");
@@ -55,87 +56,74 @@ function Register() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8">
-          <h1 className="text-2xl font-semibold text-center mb-2">
+        <div className="app-card p-8">
+          <h1 style={{ fontSize: 22, fontWeight: 800, textAlign: "center", margin: 0 }}>
             Create your cooking account
           </h1>
-          <p className="text-sm text-gray-500 text-center mb-6">
+          <p className="muted" style={{ fontSize: 13, textAlign: "center", marginTop: 8 }}>
             Sign up to save recipes, track your favorites, and discover new ideas.
           </p>
 
-          {error && (
-            <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-              {error}
-            </div>
-          )}
+          {error && <div className="alert alert-error mt-4">{error}</div>}
+          {success && <div className="alert alert-success mt-4">{success}</div>}
 
-          {success && (
-            <div className="mb-4 text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg px-3 py-2">
-              {success}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4 mt-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="muted" style={{ fontSize: 13, fontWeight: 700, display: "block", marginBottom: 6 }}>
                 Name
               </label>
               <input
                 type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
+                className="input"
                 placeholder="Your name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 autoComplete="name"
+                disabled={loading}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="muted" style={{ fontSize: 13, fontWeight: 700, display: "block", marginBottom: 6 }}>
                 Email
               </label>
               <input
                 type="email"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
+                className="input"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
+                disabled={loading}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="muted" style={{ fontSize: 13, fontWeight: 700, display: "block", marginBottom: 6 }}>
                 Password
               </label>
               <input
                 type="password"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
+                className="input"
                 placeholder="At least 6 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="new-password"
+                disabled={loading}
               />
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full mt-2 bg-emerald-600 text-white text-sm font-medium py-2.5 rounded-full hover:bg-emerald-700 transition disabled:opacity-60"
-            >
+            <button type="submit" disabled={loading} className="btn btn-primary w-full">
               {loading ? "Creating account..." : "Register"}
             </button>
           </form>
         </div>
 
-        <p className="text-center text-xs text-gray-500 mt-4">
+        <p className="muted" style={{ textAlign: "center", fontSize: 12, marginTop: 14 }}>
           Already have an account?{" "}
-          <Link
-            to="/login"
-            className="text-gray-900 font-medium hover:underline"
-          >
+          <Link to="/login" className="nav-link" style={{ fontWeight: 800, textDecoration: "underline", textUnderlineOffset: 3 }}>
             Log in
           </Link>
         </p>

@@ -1,5 +1,5 @@
 // src/App.js
-// FORCE REBUILD 2025-12-21-V1-FIX
+// FORCE REBUILD 2025-12-21-V3-SESSION
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Routes, Route, Link, useNavigate } from "react-router-dom";
@@ -22,7 +22,6 @@ function App() {
   const [me, setMe] = useState(null);
   const [meLoading, setMeLoading] = useState(true);
 
-  // ✅ กัน setState หลัง unmount (เริ่ม true แล้วปิดตอน unmount)
   const mountedRef = useRef(true);
   useEffect(() => {
     return () => {
@@ -30,7 +29,6 @@ function App() {
     };
   }, []);
 
-  // ✅ กันเรียก /auth/me ซ้อนกัน
   const refreshingRef = useRef(false);
 
   const refreshMe = useCallback(async () => {
@@ -53,10 +51,9 @@ function App() {
 
       const data = await res.json().catch(() => ({}));
       if (mountedRef.current) setMe(data.user ?? data);
-    } catch (err) {
+    } catch {
       if (mountedRef.current) setMe(null);
     } finally {
-      // ✅ สำคัญ: reset เสมอ ไม่ให้ค้างว่า "กำลัง refresh"
       refreshingRef.current = false;
       if (mountedRef.current) setMeLoading(false);
     }
@@ -66,74 +63,80 @@ function App() {
     refreshMe();
   }, [refreshMe]);
 
-  // ส่งให้ Login เรียกหลัง login สำเร็จ
-  const updateToken = async () => {
-    await refreshMe();
-  };
+  // ✅ เวลา user สลับแท็บกลับมา ให้เช็ค session อีกรอบ (ช่วยกันเคส session เปลี่ยน)
+  useEffect(() => {
+    const onFocus = () => refreshMe();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [refreshMe]);
 
-  const handleLogout = async () => {
+  const updateToken = useCallback(async () => {
+    await refreshMe();
+  }, [refreshMe]);
+
+  const handleLogout = useCallback(async () => {
     try {
       await fetch(`${API_BASE}/auth/logout`, {
         method: "POST",
         credentials: "include",
         cache: "no-store",
       });
-    } catch (e) {
+    } catch {
       // ignore
     } finally {
       setMe(null);
       navigate("/login", { replace: true });
     }
-  };
+  }, [navigate]);
 
   const isAuthed = !!me;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen flex flex-col app-bg">
       {/* NAVBAR */}
-      <nav className="bg-white border-b border-gray-200">
+      <nav className="app-nav">
         <div className="w-full px-8 py-3 flex items-center justify-between">
-          <Link to="/" className="font-semibold text-xl tracking-tight text-gray-900">
-            What Will You Cook?
+          <Link to="/" className="brand">
+            <span className="brand-mark" aria-hidden="true" />
+            <span style={{ fontSize: 18 }}>What Will You Cook?</span>
           </Link>
 
           <div className="flex items-center space-x-6 text-base">
-            <Link to="/" className="hover:text-gray-900 text-gray-700">
+            <Link to="/" className="nav-link">
               Home
             </Link>
 
             {isAuthed ? (
-              <Link to="/my-recipes" className="hover:text-gray-900 text-gray-700">
+              <Link to="/my-recipes" className="nav-link">
                 My Recipes
               </Link>
             ) : (
-              <span className="text-gray-400 cursor-not-allowed" title="Log in to view your recipes">
+              <span className="muted" style={{ opacity: 0.65 }} title="Log in to view your recipes">
                 My Recipes
               </span>
             )}
 
-            <Link to="/about" className="hover:text-gray-900 text-gray-700">
+            <Link to="/about" className="nav-link">
               About
             </Link>
-            <Link to="/contact" className="hover:text-gray-900 text-gray-700">
+            <Link to="/contact" className="nav-link">
               Contact
             </Link>
 
-            <span className="h-5 w-px bg-gray-200" />
+            <span className="h-5 w-px" style={{ background: "var(--border)" }} />
 
             {!isAuthed && meLoading && (
-              <span className="text-gray-400 text-sm">Checking session...</span>
+              <span className="muted" style={{ fontSize: 12 }}>
+                Checking session...
+              </span>
             )}
 
             {!isAuthed && !meLoading && (
               <>
-                <Link to="/login" className="px-4 py-1.5 text-sm border rounded-full hover:bg-gray-50">
+                <Link to="/login" className="btn">
                   Log In
                 </Link>
-                <Link
-                  to="/register"
-                  className="px-4 py-1.5 text-sm rounded-full bg-black text-white hover:bg-gray-800"
-                >
+                <Link to="/register" className="btn btn-primary">
                   Sign Up
                 </Link>
               </>
@@ -141,16 +144,10 @@ function App() {
 
             {isAuthed && (
               <>
-                <button
-                  onClick={() => navigate("/account")}
-                  className="px-3 py-1.5 text-xs rounded-full bg-gray-900 text-white hover:bg-gray-800"
-                >
+                <button onClick={() => navigate("/account")} className="btn btn-primary">
                   My Account
                 </button>
-                <button
-                  onClick={handleLogout}
-                  className="px-3 py-1.5 text-xs border rounded-full hover:bg-gray-50"
-                >
+                <button onClick={handleLogout} className="btn">
                   Logout
                 </button>
               </>
@@ -162,36 +159,42 @@ function App() {
       {/* CONTENT */}
       <main className="py-8 flex-1">
         <Routes>
-          <Route path="/" element={<SearchPage />} />
-          <Route path="/search" element={<SearchPage />} />
+          <Route path="/" element={<SearchPage me={me} meLoading={meLoading} />} />
+          <Route path="/search" element={<SearchPage me={me} meLoading={meLoading} />} />
 
-          {/* ✅ ส่ง me + meLoading ให้ MyRecipesPage */}
           <Route path="/my-recipes" element={<MyRecipesPage me={me} meLoading={meLoading} />} />
 
-          <Route path="/recipes/:id" element={<RecipeDetailPage />} />
+          {/* ✅ ส่ง me/meLoading ให้ RecipeDetailPage ด้วย */}
+          <Route path="/recipes/:id" element={<RecipeDetailPage me={me} meLoading={meLoading} />} />
 
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
-          <Route path="/account" element={<AccountPage />} />
+
+          {/* ✅ แนะนำส่ง me/meLoading ให้ AccountPage ด้วย (ถ้าหน้านี้อยากใช้ state กลาง) */}
+          <Route path="/account" element={<AccountPage me={me} meLoading={meLoading} />} />
 
           <Route path="/login" element={<Login updateToken={updateToken} />} />
           <Route path="/register" element={<Register />} />
 
-          {/* ✅ ส่ง me + meLoading ให้ AddRecipePage */}
           <Route path="/add-recipe" element={<AddRecipePage me={me} meLoading={meLoading} />} />
+
+          {/* fallback */}
+          <Route path="*" element={<SearchPage me={me} meLoading={meLoading} />} />
         </Routes>
       </main>
 
       {/* FOOTER */}
-      <footer className="border-t border-gray-200">
-        <div className="max-w-6xl mx-auto px-4 py-6 text-xs text-gray-500 text-center">
-          <p>© 2025 What Will You Cook — Cook smarter with what you have.</p>
-          <p className="mt-1">
-            <button type="button" className="hover:text-gray-700 underline underline-offset-2">
+      <footer className="app-footer">
+        <div className="max-w-6xl mx-auto px-4 py-6 text-xs text-center muted">
+          <p style={{ margin: 0 }}>© 2025 What Will You Cook — Cook smarter with what you have.</p>
+          <p className="mt-1" style={{ marginBottom: 0 }}>
+            <button type="button" className="btn btn-ghost" style={{ padding: "6px 10px" }}>
               Privacy Policy
             </button>
-            <span className="mx-1 text-gray-400">|</span>
-            <button type="button" className="hover:text-gray-700 underline underline-offset-2">
+            <span className="mx-1" style={{ color: "var(--border)" }}>
+              |
+            </span>
+            <button type="button" className="btn btn-ghost" style={{ padding: "6px 10px" }}>
               Terms of Service
             </button>
           </p>
