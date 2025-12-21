@@ -1,5 +1,5 @@
 // src/App.js
-// FORCE REBUILD 2025-12-21-V1
+// FORCE REBUILD 2025-12-21-V1-FIX
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Routes, Route, Link, useNavigate } from "react-router-dom";
@@ -22,16 +22,15 @@ function App() {
   const [me, setMe] = useState(null);
   const [meLoading, setMeLoading] = useState(true);
 
-  // กัน setState หลัง unmount
-  const mountedRef = useRef(false);
+  // ✅ กัน setState หลัง unmount (เริ่ม true แล้วปิดตอน unmount)
+  const mountedRef = useRef(true);
   useEffect(() => {
-    mountedRef.current = true;
     return () => {
       mountedRef.current = false;
     };
   }, []);
 
-  // กันเรียก /auth/me ซ้อนกัน
+  // ✅ กันเรียก /auth/me ซ้อนกัน
   const refreshingRef = useRef(false);
 
   const refreshMe = useCallback(async () => {
@@ -39,6 +38,7 @@ function App() {
     refreshingRef.current = true;
 
     if (mountedRef.current) setMeLoading(true);
+
     try {
       const res = await fetch(`${API_BASE}/auth/me`, {
         method: "GET",
@@ -56,8 +56,9 @@ function App() {
     } catch (err) {
       if (mountedRef.current) setMe(null);
     } finally {
-      if (mountedRef.current) setMeLoading(false);
+      // ✅ สำคัญ: reset เสมอ ไม่ให้ค้างว่า "กำลัง refresh"
       refreshingRef.current = false;
+      if (mountedRef.current) setMeLoading(false);
     }
   }, []);
 
@@ -66,7 +67,9 @@ function App() {
   }, [refreshMe]);
 
   // ส่งให้ Login เรียกหลัง login สำเร็จ
-  const updateToken = async () => refreshMe();
+  const updateToken = async () => {
+    await refreshMe();
+  };
 
   const handleLogout = async () => {
     try {
@@ -127,7 +130,10 @@ function App() {
                 <Link to="/login" className="px-4 py-1.5 text-sm border rounded-full hover:bg-gray-50">
                   Log In
                 </Link>
-                <Link to="/register" className="px-4 py-1.5 text-sm rounded-full bg-black text-white hover:bg-gray-800">
+                <Link
+                  to="/register"
+                  className="px-4 py-1.5 text-sm rounded-full bg-black text-white hover:bg-gray-800"
+                >
                   Sign Up
                 </Link>
               </>
@@ -159,11 +165,8 @@ function App() {
           <Route path="/" element={<SearchPage />} />
           <Route path="/search" element={<SearchPage />} />
 
-          {/* ✅ FIX: ส่ง me + meLoading ให้ MyRecipesPage */}
-          <Route
-            path="/my-recipes"
-            element={<MyRecipesPage me={me} meLoading={meLoading} />}
-          />
+          {/* ✅ ส่ง me + meLoading ให้ MyRecipesPage */}
+          <Route path="/my-recipes" element={<MyRecipesPage me={me} meLoading={meLoading} />} />
 
           <Route path="/recipes/:id" element={<RecipeDetailPage />} />
 
@@ -174,11 +177,8 @@ function App() {
           <Route path="/login" element={<Login updateToken={updateToken} />} />
           <Route path="/register" element={<Register />} />
 
-          {/* ✅ FIX: ส่ง me + meLoading ให้ AddRecipePage */}
-          <Route
-            path="/add-recipe"
-            element={<AddRecipePage me={me} meLoading={meLoading} />}
-          />
+          {/* ✅ ส่ง me + meLoading ให้ AddRecipePage */}
+          <Route path="/add-recipe" element={<AddRecipePage me={me} meLoading={meLoading} />} />
         </Routes>
       </main>
 
