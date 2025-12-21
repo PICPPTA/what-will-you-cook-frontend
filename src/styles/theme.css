@@ -15,20 +15,49 @@
   --radius: 18px;
 }
 
-html, body {
+html, body, #root {
   height: 100%;
+}
+
+/* ✅ ตั้งพื้นหลังให้ชั้นฐานเป็นสีเดียว */
+html {
+  background: var(--bg);
 }
 
 body {
   margin: 0;
+  min-height: 100%;
   font-family: "Open Sans", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   color: var(--text);
-  background: radial-gradient(900px 420px at 12% 0%, rgba(63,106,79,0.12) 0%, rgba(246,241,232,0) 55%),
-              radial-gradient(900px 420px at 92% 20%, rgba(167,127,90,0.10) 0%, rgba(246,241,232,0) 55%),
-              var(--bg);
+  background: var(--bg);
+
+  /* กันบาง browser ทำให้เกิดแถบสี/กระพริบตอน scroll */
+  overflow-x: hidden;
 }
 
-/* Layout wrappers */
+/* ✅ ทำ gradient เป็น overlay แบบ fixed: ไม่แบ่ง 2 สีอีก */
+body::before{
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+
+  /* ปรับให้ดู “มีมิติ” แต่ไม่ทำให้เกิดแถบสองสี */
+  background:
+    radial-gradient(1400px 900px at 12% 0%,
+      rgba(63,106,79,0.14) 0%,
+      rgba(246,241,232,0) 65%),
+    radial-gradient(1400px 900px at 92% 20%,
+      rgba(167,127,90,0.12) 0%,
+      rgba(246,241,232,0) 65%),
+    radial-gradient(1200px 800px at 40% 100%,
+      rgba(47,79,58,0.06) 0%,
+      rgba(246,241,232,0) 70%);
+}
+
+/* Ensure app wrapper never paints its own background */
+#root { background: transparent; }
 .app-bg { background: transparent; }
 
 /* Nav */
@@ -37,7 +66,7 @@ body {
   top: 0;
   z-index: 20;
   backdrop-filter: blur(10px);
-  background: rgba(246,241,232,0.70);
+  background: rgba(246,241,232,0.72);
   border-bottom: 1px solid var(--border);
 }
 
