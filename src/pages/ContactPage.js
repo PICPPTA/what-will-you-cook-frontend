@@ -21,7 +21,7 @@ export default function ContactPage() {
             <span style={{ fontWeight: 800 }}>Support:</span> support@whatwillyoucook.com
           </p>
           <p style={{ margin: "8px 0 0", fontSize: 13 }}>
-            <span style={{ fontWeight: 800 }}>Follow us:</span> @whatwillyoucook
+            <span style={{ fontWeight: 800 }}>Follow us:</span> ig _pic_pp_ta
           </p>
         </div>
 
