@@ -15,7 +15,7 @@ export default function ContactPage() {
 
         <div className="app-card p-4 mt-4" style={{ boxShadow: "none" }}>
           <p style={{ margin: 0, fontSize: 13 }}>
-            <span style={{ fontWeight: 800 }}>Email:</span> hello@whatwillyoucook.com
+            <span style={{ fontWeight: 800 }}>Email:</span> pichayathida.pt@gmail.com
           </p>
           <p style={{ margin: "8px 0 0", fontSize: 13 }}>
             <span style={{ fontWeight: 800 }}>Support:</span> support@whatwillyoucook.com
